@@ -29,16 +29,16 @@ using namespace std;
 #define ESC 27
 
 //Enumeracao com os tipos de formas geometricas
-enum tipo_forma{LIN = 1, RET = 2, TRI, POL, CIR }; // Linha, Triangulo, Retangulo, Poligono, Circulo
+enum tipo_forma{LIN = 1, TRI = 2, RET = 3, POL, CIR }; // Linha, Triangulo, Retangulo, Poligono, Circulo
 
 //Verifica se foi realizado o primeiro clique do mouse
-bool click1 = false;
+bool click1 = false, click2 = false;
 
 //Coordenadas da posicao atual do mouse
 int m_x, m_y;
 
 //Coordenadas do primeiro clique e do segundo clique do mouse
-int x_1, y_1, x_2, y_2;
+int x_1, y_1, x_2, y_2, x_3, y_3;
 
 //Indica o tipo de forma geometrica ativa para desenhar
 int modo = LIN;
@@ -101,7 +101,7 @@ void drawFormas();
 // Funcao que implementa o Algoritmo de Bresenham para rasterizacao de segmentos de retas
 void retaBresenham(int x1,int y1,int x2,int y2);
 void quadrilatero(int x1, int y1, int x2, int y2);
-
+void triangulo(int x1, int y1, int x2, int y2, int x3, int y3);
 
 /*
  * Funcao principal
@@ -123,6 +123,7 @@ int main(int argc, char** argv){
     glutCreateMenu(menu_popup);
     glutAddMenuEntry("Linha", LIN);
     glutAddMenuEntry("Retangulo", RET);
+    glutAddMenuEntry("Triangulo", TRI);
     glutAddMenuEntry("Sair", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 
@@ -197,7 +198,7 @@ void mouse(int button, int state, int x, int y){
     switch (button) {
         case GLUT_LEFT_BUTTON:
             switch(modo){
-                case LIN:
+                case LIN:{
                     if (state == GLUT_DOWN) {
                         if(click1){
                             x_2 = x;
@@ -213,9 +214,10 @@ void mouse(int button, int state, int x, int y){
                             printf("Clique 1(%d, %d)\n",x_1,y_1);
                         }
                     }
-                break;
+                	break;
+		 		 }		
             	
-            	case RET:
+            	case RET:{
                     if (state == GLUT_DOWN) {
                         if (click1) {
                             x_2 = x;
@@ -231,9 +233,37 @@ void mouse(int button, int state, int x, int y){
                             printf("Clique 1(%d, %d)\n",x_1,y_1);
                         }
                     }
-                break;
-            }
-        break;
+                	break;
+				}
+				
+            	case TRI:{
+                    if (state == GLUT_DOWN) {
+				        if (click1 && click2) {
+				        	// Primeiro clique
+				            x_3 = x;
+				            y_3 = height - y - 1;
+				            printf("Clique 3(%d, %d)\n", x_3, y_3);
+				            triangulo(x_1, y_1, x_2, y_2, x_3, y_3);
+				            click1 = false;
+				            click2 = false;
+				            glutPostRedisplay();
+				        } else if (click1){
+				            // Segundo clique - desenha a reta
+				            x_2 = x;
+				            y_2 = height - y - 1;
+				            printf("Clique 2(%d, %d)\n", x_2, y_2);
+				            click2 = true;
+                        } else {
+							click1 = true;
+							x_1 = x;
+							y_1 = height - y - 1;
+							printf("Clique 1(%d, %d)\n", x_1, y_1);
+						}
+                    }
+                    break;
+				}
+            }	
+		break;
     }
 }
 /*
@@ -281,6 +311,7 @@ void drawFormas() {
                 // Percorre a lista de vertices da forma retangulo para desenhar
                 auto it = f->v.begin();
                 auto end = f->v.end();
+                
                 while (it != end) {
                     auto next = std::next(it);
                     if (next == end) {
@@ -289,8 +320,23 @@ void drawFormas() {
                     retaBresenham(it->x, it->y, next->x, next->y);
                     ++it;
                 }
- 	  	 	 	break;
+ 	  	 break;
             }
+            case TRI: {
+		    // Percorre a lista de vertices da forma triângulo para desenhar
+		    auto it = f->v.begin();
+		    auto end = f->v.end();
+		
+		    while (it != end) {
+			auto next = std::next(it);
+			if (next == end) {
+			    next = f->v.begin();  // Conecta o último vértice ao primeiro
+			}
+			retaBresenham(it->x, it->y, next->x, next->y);
+			++it;
+		    }
+		break;
+		}
         }
     }
 }
@@ -362,4 +408,14 @@ void quadrilatero(int x1, int y1, int x2, int y2){
     pushVertice(x2, y1);
     pushVertice(x2, y2);
     pushVertice(x1, y2);
+}
+
+void triangulo(int x1, int y1, int x2, int y2, int x3, int y3){
+	// Adiciona a forma triângulo à lista de formas
+    pushForma(TRI);
+    
+    // Adiciona os três vértices do triangulo à lista de vértices
+    pushVertice(x3, y3);
+    pushVertice(x2, y2);
+    pushVertice(x1, y1);
 }
