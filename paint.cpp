@@ -29,10 +29,14 @@ using namespace std;
 #define ESC 27
 
 //Enumeracao com os tipos de formas geometricas
-enum tipo_forma{LIN = 1, TRI = 2, RET = 3, POL, CIR }; // Linha, Triangulo, Retangulo, Poligono, Circulo
+enum tipo_forma{LIN = 1, TRI = 2, RET = 3, POL = 4, CIR }; // Linha, Triangulo, Retangulo, Poligono, Circulo
 
 //Verifica se foi realizado o primeiro clique do mouse
 bool click1 = false, click2 = false;
+
+bool desenhandoPoligono = false;
+
+int cliques = 0;
 
 //Coordenadas da posicao atual do mouse
 int m_x, m_y;
@@ -102,6 +106,7 @@ void drawFormas();
 void retaBresenham(int x1,int y1,int x2,int y2);
 void quadrilatero(int x1, int y1, int x2, int y2);
 void triangulo(int x1, int y1, int x2, int y2, int x3, int y3);
+void poligono(int x, int y, int cliques);
 
 /*
  * Funcao principal
@@ -124,6 +129,7 @@ int main(int argc, char** argv){
     glutAddMenuEntry("Linha", LIN);
     glutAddMenuEntry("Retangulo", RET);
     glutAddMenuEntry("Triangulo", TRI);
+    glutAddMenuEntry("Poligono", POL);
     glutAddMenuEntry("Sair", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 
@@ -188,6 +194,20 @@ void menu_popup(int value){
 void keyboard(unsigned char key, int x, int y){
     switch (key) { // key - variavel que possui valor ASCII da tecla precionada
         case ESC: exit(EXIT_SUCCESS); break;
+        //condicional de parada do poligono
+        //usuario vai desenhar o poligono e a barra de espaço é a condição de parada para interromper o desenho do poligono
+        case ' ':
+            // Verifica se está desenhando um polígono
+            if (desenhandoPoligono) {
+                desenhandoPoligono = false;  // Define o estado do desenho do polígono como concluído
+                cliques = 0;  // Reinicia o contador de cliques para o próximo polígono
+                
+                // Limpa as variáveis x_1 e y_1
+                x_1 = 0;
+                y_1 = 0;
+                glutPostRedisplay();
+            }
+            break;
     }
 }
 
@@ -262,7 +282,28 @@ void mouse(int button, int state, int x, int y){
                     }
                     break;
 				}
-            }	
+				
+				case POL:{
+                    if (state == GLUT_DOWN) {
+                        if (!desenhandoPoligono) {
+                            // Inicia o desenho do polígono apenas no primeiro clique
+                            desenhandoPoligono = true;
+                            // Adiciona o primeiro vértice
+                            pushForma(POL);
+                            x_1 = x;
+                            y_1 = height - y - 1;
+                            pushVertice(x_1, y_1);
+                            cliques = 1;
+                            glutPostRedisplay();
+                        } else {
+                            // Incrementa o contador de cliques e continua o desenho
+                            cliques++;
+                            pushVertice(x, height - y - 1);
+                        }
+                    }
+					break;
+				}
+            }
 		break;
     }
 }
@@ -320,23 +361,39 @@ void drawFormas() {
                     retaBresenham(it->x, it->y, next->x, next->y);
                     ++it;
                 }
- 	  	 break;
+ 	  	 	 	break;
             }
             case TRI: {
-		    // Percorre a lista de vertices da forma triângulo para desenhar
-		    auto it = f->v.begin();
-		    auto end = f->v.end();
-		
-		    while (it != end) {
-			auto next = std::next(it);
-			if (next == end) {
-			    next = f->v.begin();  // Conecta o último vértice ao primeiro
+			    // Percorre a lista de vertices da forma triângulo para desenhar
+			    auto it = f->v.begin();
+			    auto end = f->v.end();
+			
+			    while (it != end) {
+			        auto next = std::next(it);
+			        if (next == end) {
+			            next = f->v.begin();  // Conecta o último vértice ao primeiro
+			        }
+			        retaBresenham(it->x, it->y, next->x, next->y);
+			        ++it;
+			    }
+			    break;
 			}
-			retaBresenham(it->x, it->y, next->x, next->y);
-			++it;
-		    }
-		break;
-		}
+			case POL: {
+                // Percorre a lista de vértices do polígono e desenha as arestas
+                auto it = f->v.begin();
+                auto end = f->v.end();
+                auto first = it;
+
+                while (it != end) {
+                    auto next = std::next(it);
+                    if (next == end) {
+                        next = first;  // Conecta o último vértice ao primeiro
+                    }
+                    retaBresenham(it->x, it->y, next->x, next->y);
+                    ++it;
+                }
+                break;
+			}
         }
     }
 }
@@ -415,7 +472,17 @@ void triangulo(int x1, int y1, int x2, int y2, int x3, int y3){
     pushForma(TRI);
     
     // Adiciona os três vértices do triangulo à lista de vértices
-    pushVertice(x3, y3);
-    pushVertice(x2, y2);
     pushVertice(x1, y1);
+    pushVertice(x2, y2);
+    pushVertice(x3, y3);
+}
+
+// Adiciona um vértice à forma atual em construção
+void poligono(int x, int y, int cliques) {
+    if (cliques > 0 && desenhandoPoligono) {
+        if (cliques == 1) {
+            pushForma(POL);  // Inicia uma nova forma para o novo polígono
+        }
+        pushVertice(x, y);  // Adiciona vértices ao polígono
+    }
 }
