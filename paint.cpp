@@ -379,6 +379,11 @@ void drawPixel(int x, int y){
 void drawFormas() {
 	// Apos o primeiro clique, desenha a reta com a posicao atual do mouse
 	if (click1) retaBresenham(x_1, y_1, m_x, m_y);
+	if (click1 && click2){
+		retaBresenham(x_1, y_1, x_2, y_2);
+		retaBresenham(x_1, y_1, m_x, m_y);
+		retaBresenham(x_2, y_2, m_x, m_y);
+	}
     // Percorre a lista de formas geometricas para desenhar
     for (auto f = formas.begin(); f != formas.end(); ++f) {
         switch (f->tipo) {
