@@ -65,6 +65,7 @@ struct forma{
 // Lista encadeada de formas geometricas
 forward_list<forma> formas;
 
+
 // Funcao para armazenar uma forma geometrica na lista de formas
 // Armazena sempre no inicio da lista
 void pushForma(int tipo){
@@ -112,6 +113,7 @@ void escala(float sx, float sy);
 void cisalhamento(float shx, float shy);
 void reflexao(bool horizontal, bool vertical);
 void rotacao(float angle);
+void circuloBresenham(double x1, double y1, double x2, double y2);
 
 /*
  * Funcao principal
@@ -281,7 +283,7 @@ void mouse(int button, int state, int x, int y){
 				            x_3 = x;
 				            y_3 = height - y - 1;
 				            printf("Clique 3(%d, %d)\n", x_3, y_3);
-				            triangulo(x_1, y_1, x_2, y_2, x_3, y_3);
+							triangulo(x_1, y_1, x_2, y_2, x_3, y_3);
 				            click1 = false;
 				            click2 = false;
 				            glutPostRedisplay();
@@ -321,6 +323,26 @@ void mouse(int button, int state, int x, int y){
                     }
 					break;
 				}
+				
+				case CIR: {
+				    if (state == GLUT_DOWN) {
+				        if (click1) {
+				            x_2 = x;
+				            y_2 = height - y - 1;
+				            pushForma(CIR);
+				            pushVertice(x_2, y_2);
+				            pushVertice(x_1, y_1);
+				            click1 = false;
+				            glutPostRedisplay();
+				        } else {
+				            click1 = true;
+				            x_1 = x;
+				            y_1 = height - y - 1;
+				            printf("Clique 1(%d, %d)\n", x_1, y_1);
+				        }
+				    }
+				    break;
+				}	
             }
 		break;
     }
@@ -348,7 +370,6 @@ void drawPixel(int x, int y){
 void drawFormas() {
 	// Apos o primeiro clique, desenha a reta com a posicao atual do mouse
 	if (click1) retaBresenham(x_1, y_1, m_x, m_y);
-    // Percorre a lista de formas geometricas para desenhar
     // Percorre a lista de formas geometricas para desenhar
     for (auto f = formas.begin(); f != formas.end(); ++f) {
         switch (f->tipo) {
@@ -412,6 +433,15 @@ void drawFormas() {
                 }
                 break;
 			}
+			case CIR: {
+				int i = 0, x[2], y[2];
+				for(forward_list<vertice>::iterator v = f->v.begin(); v!=f->v.end(); v++, i++){
+					x[i] = v->x;
+					y[i] = v->y;
+				}
+				circuloBresenham(x[0], y[0], x[1], y[1]);
+                break;
+			}	
         }
     }
 }
@@ -664,4 +694,53 @@ void rotacao(float angle) {
     }
 
     glutPostRedisplay();
+}
+
+void circuloBresenham(double x1, double y1, double x2, double y2){
+	double R = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+	int auxiliar = int(R);
+	
+	int d = 1 - auxiliar;
+	int incE = 3;
+	int incSE = -2*auxiliar + 5;
+	
+	drawPixel(x1, y1 + auxiliar);
+	drawPixel(x1, y1 - auxiliar);
+	drawPixel(x1 + auxiliar, y1);
+	drawPixel(x1 - auxiliar, y1);
+	
+	int y = auxiliar;
+	
+	for(int x = 1; y>x; x++){
+		if(d<0){
+			d = d + incE;
+			incE = incE + 2;
+			incSE = incSE + 2;
+			
+			drawPixel(x1 + x, y1 + y);
+			drawPixel(x1 + y, y1 + x);
+			drawPixel(x1 - x, y1 + y);
+			drawPixel(x1 + y, y1 - x);
+			drawPixel(x1 + x, y1 - y);
+			drawPixel(x1 - y, y1 + x);
+			drawPixel(x1 - x, y1 - y);
+			drawPixel(x1 - y, y1 - x);
+		}
+		else{
+			d = d + incSE;
+			incE = incE + 2;
+			incSE = incSE + 4;
+			
+			drawPixel(x1 + x, y1 + y);
+			drawPixel(x1 + y, y1 + x);
+			drawPixel(x1 - x, y1 + y);
+			drawPixel(x1 + y, y1 - x);
+			drawPixel(x1 + x, y1 - y);
+			drawPixel(x1 - y, y1 + x);
+			drawPixel(x1 - x, y1 - y);
+			drawPixel(x1 - y, y1 - x);
+			
+			y = y - 1;
+		}
+	}
 }
