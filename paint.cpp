@@ -29,7 +29,8 @@ using namespace std;
 #define ESC 27
 
 //Enumeracao com os tipos de formas geometricas
-enum tipo_forma{LIN = 1, TRI = 2, RET = 3, POL = 4, CIR = 5, TRA = 6, ESL = 7, CIS = 8, REF = 9, ROT = 10}; // Linha, Triangulo, Retangulo, Poligono, Circulo
+enum tipo_forma{LIN = 1, TRI = 2, RET = 3, POL = 4, CIR = 5}; // Linha, Triangulo, Retangulo, Poligono, Circulo
+enum tipo_transf{TRA = 1, ESL = 2, CIS = 3, REF = 4, ROT = 5};
 
 //Verifica se foi realizado o primeiro clique do mouse
 bool click1 = false, click2 = false;
@@ -97,6 +98,7 @@ void init(void);
 void reshape(int w, int h);
 void display(void);
 void menu_popup(int value);
+void submenu_transf(int value);
 void keyboard(unsigned char key, int x, int y);
 void mouse(int button, int state, int x, int y);
 void mousePassiveMotion(int x, int y);
@@ -131,6 +133,13 @@ int main(int argc, char** argv){
     glutPassiveMotionFunc(mousePassiveMotion); //fucao callback do movimento passivo do mouse
     glutDisplayFunc(display); //funcao callback de desenho
     
+    int submenuTransf = glutCreateMenu(submenu_transf);
+    glutAddMenuEntry("Translacao", TRA);
+    glutAddMenuEntry("Escala", ESL);
+    glutAddMenuEntry("Cisalhamento", CIS);
+    glutAddMenuEntry("Reflexao", REF);
+    glutAddMenuEntry("Rotacao", ROT);
+    
     // Define o menu pop-up
     glutCreateMenu(menu_popup);
     glutAddMenuEntry("Linha", LIN);
@@ -138,11 +147,7 @@ int main(int argc, char** argv){
     glutAddMenuEntry("Triangulo", TRI);
     glutAddMenuEntry("Poligono", POL);
     glutAddMenuEntry("Circulo", CIR);
-    glutAddMenuEntry("Translacao", TRA);
-    glutAddMenuEntry("Escala", ESL);
-    glutAddMenuEntry("Cisalhamento", CIS);
-    glutAddMenuEntry("Reflexao", REF);
-    glutAddMenuEntry("Rotacao", ROT);
+    glutAddSubMenu("Transformações", submenuTransf);
     glutAddMenuEntry("Sair", 0);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 
@@ -196,17 +201,21 @@ void display(void){
  * Controla o menu pop-up
  */
 void menu_popup(int value){
-    if (value == 0) exit(EXIT_SUCCESS);
-    switch (value){
-		case 6: translacao(20, 20); break;
-		case 7: escala(0.5, 0.5); break;
-		case 8: cisalhamento(0.7, 0); break;
-		case 9: reflexao(false, true); break;
-		case 10: rotacao(45); break;
-	}  
+    if (value == 0) exit(EXIT_SUCCESS);  
     modo = value;	
 }
 
+void submenu_transf(int value){
+	if (value == 0) exit(EXIT_SUCCESS);
+	switch (value){
+		case 1: translacao(20, 20); break;
+		case 2: escala(0.5, 0.5); break;
+		case 3: cisalhamento(0.7, 0); break;
+		case 4: reflexao(false, true); break;
+		case 5: rotacao(45); break;
+	}
+	modo = value;
+}
 
 /*
  * Controle das teclas comuns do teclado
